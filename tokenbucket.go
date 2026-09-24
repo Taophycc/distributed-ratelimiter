@@ -47,3 +47,22 @@ func (tb *TokenBucket) refill() {
 	}
 	tb.lastRefill = tb.lastRefill.Add(time.Duration(earned) * tb.refillInterval)
 }
+
+func (tb *TokenBucket) Remaining() int64 {
+	tb.mu.Lock()
+	defer tb.mu.Unlock()
+	tb.refill()
+	return tb.tokens
+}
+
+func (tb *TokenBucket) ResetAt() time.Time {
+	tb.mu.Lock()
+	defer tb.mu.Unlock()
+	tb.refill()
+
+	return tb.lastRefill.Add(tb.refillInterval)
+}
+
+func (tb *TokenBucket) Limit() int64 {
+	return tb.capacity
+}
