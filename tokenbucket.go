@@ -60,6 +60,8 @@ func (tb *TokenBucket) ResetAt() time.Time {
 	defer tb.mu.Unlock()
 	tb.refill()
 
+	// ResetAt represents the next refill boundary, which is always in the future
+	// for a valid bucket configuration.
 	return tb.lastRefill.Add(tb.refillInterval)
 }
 

@@ -8,7 +8,9 @@ import (
 )
 
 func Test_ConcurrentDifferentKeys(t *testing.T) {
-	l := NewLimiter(100, time.Millisecond)
+	l := NewLimiter(func() Bucket {
+		return NewTokenBucket(100, time.Millisecond)
+	})
 	var wg sync.WaitGroup
 	for i := range 50 {
 		wg.Add(1)
@@ -22,14 +24,18 @@ func Test_ConcurrentDifferentKeys(t *testing.T) {
 }
 
 func TestLimiter_LimitUsesPerKeyBucket(t *testing.T) {
-	l := NewLimiter(3, time.Second)
+	l := NewLimiter(func() Bucket {
+		return NewTokenBucket(3, time.Second)
+	})
 	if got := l.Limit("user-a"); got != 3 {
 		t.Fatalf("Limit(user-a) = %d, want 3", got)
 	}
 }
 
 func TestLimiter_ResetAtIsInTheFuture(t *testing.T) {
-	l := NewLimiter(3, time.Second)
+	l := NewLimiter(func() Bucket {
+		return NewTokenBucket(3, time.Second)
+	})
 	if got := l.ResetAt("user-a"); !got.After(time.Now()) {
 		t.Fatal("expected next reset time to be in the future")
 	}
