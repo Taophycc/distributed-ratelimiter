@@ -35,15 +35,16 @@ func(sw *SlidingWindow) Allow() bool {
 
 	now := time.Now()
 	elapsed := now.Sub(sw.currStart)
+
 	if elapsed >= sw.window {
-		windowPassed := int64(elapsed/sw.window)
-		if windowPassed == 1 {
+		windowsPassed := int64(elapsed/sw.window)
+		if windowsPassed == 1 {
 			sw.prevCount = sw.currCount
 		} else {
 			sw.prevCount = 0
 		}
 		sw.currCount = 0
-		sw.currStart = sw.currStart.Add(time.Duration(windowPassed) * sw.window) 
+		sw.currStart = sw.currStart.Add(time.Duration(windowsPassed) * sw.window) 
 		elapsed = now.Sub(sw.currStart)
 	}
 

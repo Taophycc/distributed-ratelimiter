@@ -10,7 +10,7 @@ import (
 )
 
 func TestRateLimit_AllowsUnderCapacity(t *testing.T) {
-	limiter := ratelimit.NewLimiter(func() ratelimit.Bucket {
+	limiter := ratelimit.NewLimiter(func(string) ratelimit.Bucket {
 		return ratelimit.NewTokenBucket(2, time.Second)
 	})
 	keyFn := func(r *http.Request) string { return "fixed-key" }
@@ -31,7 +31,7 @@ func TestRateLimit_AllowsUnderCapacity(t *testing.T) {
 }
 
 func TestRateLimit_DeniesOverCapacity(t *testing.T) {
-	limiter := ratelimit.NewLimiter(func() ratelimit.Bucket {
+	limiter := ratelimit.NewLimiter(func(string) ratelimit.Bucket {
 		return ratelimit.NewTokenBucket(1, time.Minute)
 	})
 	keyFn := func(r *http.Request) string { return "fixed-key" }
@@ -59,7 +59,7 @@ func TestRateLimit_DeniesOverCapacity(t *testing.T) {
 }
 
 func TestRateLimit_NextNotCalledWhenDenied(t *testing.T) {
-	limiter := ratelimit.NewLimiter(func() ratelimit.Bucket {
+	limiter := ratelimit.NewLimiter(func(string) ratelimit.Bucket {
 		return ratelimit.NewTokenBucket(0, time.Minute)
 	})
 	keyFn := func(r *http.Request) string { return "fixed-key" }
