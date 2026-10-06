@@ -1,4 +1,4 @@
-module github.com/Taophycc/ratelimit
+module github.com/Taophycc/distributed-ratelimiter
 
 go 1.26.2
 

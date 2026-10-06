@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/Taophycc/ratelimit"
-	"github.com/Taophycc/ratelimit/middleware"
+	ratelimit "github.com/Taophycc/distributed-ratelimiter"
+	"github.com/Taophycc/distributed-ratelimiter/middleware"
 	"github.com/redis/go-redis/v9"
 )
 

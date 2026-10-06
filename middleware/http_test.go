@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Taophycc/ratelimit"
+	ratelimit "github.com/Taophycc/distributed-ratelimiter"
 )
 
 func TestRateLimit_AllowsUnderCapacity(t *testing.T) {

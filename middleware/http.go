@@ -4,7 +4,8 @@ import (
 	"fmt"
 	"net/http"
 	"time"
-	"github.com/Taophycc/ratelimit"
+
+	ratelimit "github.com/Taophycc/distributed-ratelimiter"
 )
 
 type KeyFunc func(*http.Request) string
