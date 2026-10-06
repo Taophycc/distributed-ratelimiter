@@ -22,16 +22,28 @@ func NewTokenBucket(capacity int64, refillInterval time.Duration) *TokenBucket {
 	}
 }
 
-func (tb *TokenBucket) Allow() bool {
+func (tb *TokenBucket) Allow() Result {
 	tb.mu.Lock()
 	defer tb.mu.Unlock()
 
 	tb.refill()
+	allowed := false
 	if tb.tokens > 0 {
 		tb.tokens--
-		return true
+		allowed = true
 	}
-	return false
+
+	resetAt := tb.lastRefill.Add(tb.refillInterval)
+    if resetAt.Before(time.Now()) {
+        resetAt = time.Now().Add(tb.refillInterval)
+    }
+	
+	return Result{
+		Allowed:   allowed,
+		Limit:     tb.capacity,
+		Remaining: tb.tokens,
+		ResetAt:   resetAt,
+	}
 }
 
 func (tb *TokenBucket) refill() {
@@ -46,25 +58,4 @@ func (tb *TokenBucket) refill() {
 		tb.tokens = tb.capacity
 	}
 	tb.lastRefill = tb.lastRefill.Add(time.Duration(earned) * tb.refillInterval)
-}
-
-func (tb *TokenBucket) Remaining() int64 {
-	tb.mu.Lock()
-	defer tb.mu.Unlock()
-	tb.refill()
-	return tb.tokens
-}
-
-func (tb *TokenBucket) ResetAt() time.Time {
-	tb.mu.Lock()
-	defer tb.mu.Unlock()
-	tb.refill()
-
-	// ResetAt represents the next refill boundary, which is always in the future
-	// for a valid bucket configuration.
-	return tb.lastRefill.Add(tb.refillInterval)
-}
-
-func (tb *TokenBucket) Limit() int64 {
-	return tb.capacity
 }

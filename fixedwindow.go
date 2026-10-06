@@ -22,7 +22,7 @@ func NewFixedWindow(limit int64, window time.Duration) *FixedWindow {
 	}
 }
 
-func (fw *FixedWindow) Allow() bool {
+func (fw *FixedWindow) Allow() Result {
 	fw.mu.Lock()
 	defer fw.mu.Unlock()
 
@@ -31,29 +31,24 @@ func (fw *FixedWindow) Allow() bool {
 		fw.windowStart = now
 		fw.count = 0
 	}
+	allowed := false
 	if fw.count < fw.limit {
 		fw.count++
-		return true
+		allowed = true
 	}
-	return false
-}
 
-func (fw *FixedWindow) Remaining() int64 {
-    fw.mu.Lock()
-    defer fw.mu.Unlock()
-    now := time.Now()
-    if now.Sub(fw.windowStart) >= fw.window {
-        return fw.limit // window would reset on next call, full budget available
-    }
-    return fw.limit - fw.count
-}
+    remaining := fw.limit - fw.count
 
-func (fw *FixedWindow) ResetAt() time.Time {
-    fw.mu.Lock()
-    defer fw.mu.Unlock()
-    return fw.windowStart.Add(fw.window)
-}
+	resetAt := time.Now()
+	if fw.count >=fw.limit {
+		resetAt = fw.windowStart.Add(fw.window)
+	}
 
-func (fw *FixedWindow) Limit() int64 {
-    return fw.limit
+	return Result {
+		Allowed: allowed,
+		Remaining: remaining,
+		ResetAt: resetAt,
+		Limit: fw.limit,
+	}
+	
 }

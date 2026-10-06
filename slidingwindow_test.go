@@ -8,11 +8,11 @@ import (
 func TestSlidingWindow_AllowsUpToLimit(t *testing.T) {
 	sw := NewSlidingWindow(3, time.Minute)
 	for i := 0; i < 3; i++ {
-		if !sw.Allow() {
+		if !sw.Allow().Allowed {
 			t.Fatalf("request %d: expected allow", i)
 		}
 	}
-	if sw.Allow() {
+	if sw.Allow().Allowed {
 		t.Fatal("4th request should be denied, limit reached")
 	}
 }
@@ -21,7 +21,7 @@ func TestSlidingWindow_FullyRecoversAfterWindow(t *testing.T) {
 	sw := NewSlidingWindow(2, 50*time.Millisecond)
 	sw.Allow()
 	sw.Allow()
-	if sw.Allow() {
+	if sw.Allow().Allowed {
 		t.Fatal("expected denial, limit reached")
 	}
 
@@ -29,7 +29,7 @@ func TestSlidingWindow_FullyRecoversAfterWindow(t *testing.T) {
 	// fully decayed to ~0 by now, not just "some" window having passed
 	time.Sleep(120 * time.Millisecond)
 
-	if !sw.Allow() {
+	if !sw.Allow().Allowed {
 		t.Fatal("expected allow after the previous window's influence fully decayed")
 	}
 }
@@ -37,8 +37,8 @@ func TestSlidingWindow_FullyRecoversAfterWindow(t *testing.T) {
 func TestSlidingWindow_Remaining(t *testing.T) {
 	sw := NewSlidingWindow(5, time.Minute)
 	sw.Allow()
-	sw.Allow()
-	if got := sw.Remaining(); got != 3 {
+	result := sw.Allow()
+	if got := result.Remaining; got != 3 {
 		t.Errorf("got %d remaining, want 3", got)
 	}
 }
@@ -56,7 +56,7 @@ func TestSlidingWindow_NoBoundaryFlaw(t *testing.T) {
 	// Burst 1: drain the current window completely.
 	allowed := int64(0)
 	for i := int64(0); i < limit; i++ {
-		if sw.Allow() {
+		if sw.Allow().Allowed {
 			allowed++
 		}
 	}
@@ -72,7 +72,7 @@ func TestSlidingWindow_NoBoundaryFlaw(t *testing.T) {
 	// Burst 2: attempt to drain a full new window's worth immediately.
 	allowed2 := int64(0)
 	for i := int64(0); i < limit; i++ {
-		if sw.Allow() {
+		if sw.Allow().Allowed {
 			allowed2++
 		}
 	}

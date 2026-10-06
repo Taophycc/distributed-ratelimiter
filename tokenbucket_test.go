@@ -10,13 +10,13 @@ func TestTokenBucket_Burst(t *testing.T) {
 
 	// Allow 5 requests
 	for i := 0; i < 5; i++ {
-		if !tb.Allow() {
+		if !tb.Allow().Allowed {
 			t.Errorf("Expected request %d to be allowed", i+1)
 		}
 	}
 
 	// The 6th request should be denied
-	if tb.Allow() {
+	if tb.Allow().Allowed {
 		t.Error("Expected 6th request to be denied")
 	}
 
@@ -31,13 +31,13 @@ func TestTokenBucket_Refill(t *testing.T) {
 
 	// Now we should be able to allow 5 more requests
 	for i := 0; i < 5; i++ {
-		if !tb.Allow() {
+		if !tb.Allow().Allowed {
 			t.Errorf("Expected request %d to be allowed after refill", i+1)
 		}
 	}
 
 	// The 6th request should be denied again
-	if tb.Allow() {
+	if tb.Allow().Allowed {
 		t.Error("Expected 6th request to be denied after refill")
 	}
 }

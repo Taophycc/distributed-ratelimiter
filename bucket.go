@@ -4,11 +4,16 @@ import (
 	"time"
 )
 
+type Result struct {
+	Allowed bool
+	Remaining int64
+	Limit int64
+	ResetAt time.Time
+
+}
+
 type Bucket interface {
-	Allow() bool
-	Remaining() int64
-	ResetAt() time.Time
-	Limit() int64
+	Allow() Result
 }
 
 var _ Bucket = (*TokenBucket)(nil)

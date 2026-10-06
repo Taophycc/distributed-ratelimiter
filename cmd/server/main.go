@@ -1,14 +1,27 @@
 package main
 
 import (
+	"context"
 	"log"
 	"net/http"
 	"time"
+
 	"github.com/Taophycc/ratelimit"
 	"github.com/Taophycc/ratelimit/middleware"
+	"github.com/redis/go-redis/v9"
 )
 
 func main() {
+	redisClient := redis.NewClient(&redis.Options{Addr: "localhost:6379"})
+	defer redisClient.Close()
+
+	pingCtx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
+	defer cancel()
+
+	if err := ratelimit.RedisHealthCheck(pingCtx, redisClient); err != nil {
+		log.Printf("Redis unavailable; the server is starting in fail-open mode with the in-memory fallback: %v", err)
+	}
+
 	apiKeyConfig := &ratelimit.Config{
     Default: ratelimit.Rule{Capacity: 1000, Refill: time.Minute},
     PerKey: map[string]ratelimit.Rule{
@@ -21,10 +34,24 @@ func main() {
     	return ratelimit.NewSlidingWindow(rule.Capacity, rule.Refill)
 	})
 
+	// in-memory store
+	// ipLimiter := ratelimit.NewLimiter(func(string) ratelimit.Bucket {
+    //     return ratelimit.NewTokenBucket(100, time.Second)
+    // })
 
-	ipLimiter := ratelimit.NewLimiter(func(string) ratelimit.Bucket {
-        return ratelimit.NewTokenBucket(100, time.Second)
-    })
+	// redis-store
+	ipLimiter := ratelimit.NewLimiter(func(key string) ratelimit.Bucket{
+		const capacity int64 = 100
+		const interval = time.Second
+
+		return ratelimit.NewRedisTokenBucket(
+			redisClient,
+			"ratelimit:ip:"+key,
+			capacity,
+			interval,
+			ratelimit.NewTokenBucket(capacity, interval),
+        )
+	})
 
 
 	pathLimiter := ratelimit.NewLimiter(func(string) ratelimit.Bucket {

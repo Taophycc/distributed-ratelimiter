@@ -2,7 +2,6 @@ package ratelimit
 
 import (
 	"sync"
-	"time"
 )
 
 type Limiter struct {
@@ -18,7 +17,7 @@ func NewLimiter(newBucket func(key string) Bucket) *Limiter {
 	}
 }
 
-func (l *Limiter) Allow(key string) bool {
+func (l *Limiter) Allow(key string) Result {
 	l.mu.Lock()
 	bucket, exists := l.buckets[key]
 	if !exists {
@@ -26,38 +25,7 @@ func (l *Limiter) Allow(key string) bool {
 		l.buckets[key] = bucket
 	}
 	l.mu.Unlock()
+
 	return bucket.Allow()
-}
 
-func (l *Limiter) Remaining(key string) int64 {
-	l.mu.Lock()
-	bucket, exists := l.buckets[key]
-	if !exists {
-		bucket = l.newBucket(key)
-		l.buckets[key] = bucket
-	}
-	l.mu.Unlock()
-	return bucket.Remaining()
-}
-
-func (l *Limiter) ResetAt(key string) time.Time {
-	l.mu.Lock()
-	bucket, exists := l.buckets[key]
-	if !exists {
-		bucket = l.newBucket(key)
-		l.buckets[key] = bucket
-	}
-	l.mu.Unlock()
-	return bucket.ResetAt()
-}
-
-func (l *Limiter) Limit(key string) int64 {
-	l.mu.Lock()
-	bucket, exists := l.buckets[key]
-	if !exists {
-		bucket = l.newBucket(key)
-		l.buckets[key] = bucket
-	}
-	l.mu.Unlock()
-	return bucket.Limit()
 }

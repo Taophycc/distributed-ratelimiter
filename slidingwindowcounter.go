@@ -29,7 +29,7 @@ func NewSlidingWindow(limit int64, window time.Duration) *SlidingWindow {
     }
 }
 
-func(sw *SlidingWindow) Allow() bool {
+func(sw *SlidingWindow) Allow() Result {
 	sw.mu.Lock()
 	defer sw.mu.Unlock()
 
@@ -51,52 +51,23 @@ func(sw *SlidingWindow) Allow() bool {
 	weight := float64(sw.window-elapsed)/float64(sw.window)
 	estimate := float64(sw.prevCount)*weight + float64(sw.currCount)
 
+	allowed := false
 	if estimate < float64(sw.limit) {
 		sw.currCount++
-		return true
-	}
-	return false
-
-}
-
-func (sw *SlidingWindow) Remaining() int64 {
-	sw.mu.Lock()
-	defer sw.mu.Unlock()
-
-	now := time.Now()
-	elapsed := now.Sub(sw.currStart)
-	if elapsed >= sw.window {
-		windowsPassed := int64(elapsed / sw.window)
-		if windowsPassed == 1 {
-			sw.prevCount = sw.currCount
-		} else {
-			sw.prevCount = 0
-		}
-		sw.currCount = 0
-		sw.currStart = sw.currStart.Add(time.Duration(windowsPassed) * sw.window)
-		elapsed = now.Sub(sw.currStart)
+		allowed = true
 	}
 
-	weight := float64(sw.window-elapsed) / float64(sw.window)
-	estimate := float64(sw.prevCount)*weight + float64(sw.currCount)
-
+	estimate = float64(sw.prevCount)*weight + float64(sw.currCount)
 	remaining := float64(sw.limit) - estimate
 	if remaining < 0 {
 		remaining = 0
 	}
-	return int64(remaining)
-}
 
-func (sw *SlidingWindow) ResetAt() time.Time {
-	sw.mu.Lock()
-	defer sw.mu.Unlock()
+	return Result{
+		Allowed: allowed,
+		Remaining: int64(remaining),
+		Limit: sw.limit,
+		ResetAt: sw.currStart.Add(sw.window),
+	}
 
-	// The window's influence fully fades out once a full window has
-	// elapsed since it started — that's the point sliding window's
-	// estimate is guaranteed back under any previous pressure.
-	return sw.currStart.Add(sw.window)
-}
-
-func (sw *SlidingWindow) Limit() int64 {
-	return sw.limit
 }

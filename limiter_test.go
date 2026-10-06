@@ -27,7 +27,8 @@ func TestLimiter_LimitUsesPerKeyBucket(t *testing.T) {
 	l := NewLimiter(func(string) Bucket {
 		return NewTokenBucket(3, time.Second)
 	})
-	if got := l.Limit("user-a"); got != 3 {
+	result := l.Allow("user-a")
+	if got := result.Limit; got != 3 {
 		t.Fatalf("Limit(user-a) = %d, want 3", got)
 	}
 }
@@ -36,7 +37,8 @@ func TestLimiter_ResetAtIsInTheFuture(t *testing.T) {
 	l := NewLimiter(func(string) Bucket {
 		return NewTokenBucket(3, time.Second)
 	})
-	if got := l.ResetAt("user-a"); !got.After(time.Now()) {
+	result := l.Allow("user-a")
+	if got := result.ResetAt; !got.After(time.Now()) {
 		t.Fatal("expected next reset time to be in the future")
 	}
 }
