@@ -31,7 +31,13 @@ func main() {
 	}
 	apiKeyLimiter := ratelimit.NewLimiter(func(key string) ratelimit.Bucket {
 		rule := apiKeyConfig.RuleFor(key)
-    	return ratelimit.NewSlidingWindow(rule.Capacity, rule.Refill)
+		return ratelimit.NewRedisTokenBucket(
+			redisClient,
+			"ratelimit:api-key:"+key,
+			rule.Capacity,
+			rule.Refill,
+			ratelimit.NewTokenBucket(rule.Capacity, rule.Refill),
+		)
 	})
 
 	// in-memory store
